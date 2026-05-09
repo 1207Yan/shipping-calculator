@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海事赔偿责任限额计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        body {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 22px;
+        }
+        .input-box {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        input:focus {
+            border-color: #3498db;
+        }
+        .btn-box {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 12px 40px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result-box {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #ecf5ff;
+            border-left: 4px solid #3498db;
+        }
+        .result-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .result-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        .detail-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-line;
+            font-size: 14px;
+            color: #34495e;
+            line-height: 1.6;
+        }
+        .remark {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>海事赔偿责任限额计算器</h1>
+        <div class="input-box">
+            <label for="gt">请输入船舶总吨位（GT）：</label>
+            <input type="number" id="gt" placeholder="仅支持300总吨及以上船舶" min="300" step="1">
+        </div>
+        <div class="btn-box">
+            <button onclick="calculateLimit()">计算赔偿限额</button>
+        </div>
+
+        <div id="personalResult" class="result-box" style="display: none;">
+            <div class="result-title">（一）人身伤亡赔偿责任限额</div>
+            <div class="result-value" id="personalValue"></div>
+            <div class="detail-box" id="personalDetail"></div>
+        </div>
+
+        <div id="nonPersonalResult" class="result-box" style="display: none;">
+            <div class="result-title">（二）非人身伤亡赔偿责任限额</div>
+            <div class="result-value" id="nonPersonalValue"></div>
+            <div class="detail-box" id="nonPersonalDetail"></div>
+        </div>
+
+        <div class="remark">
+            <strong>重要备注：</strong><br>
+            1. 本计算规则符合《中华人民共和国海商法》第十一章海事赔偿责任限制规定，适用于300总吨及以上的国际航行船舶；<br>
+            2. 计算单位为<strong>特别提款权（SDR）</strong>，最终人民币金额需按赔付当日SDR兑人民币官方汇率换算；<br>
+            3. 不满300总吨的船舶，以及从事沿海作业的船舶，其赔偿责任限额由国务院交通运输主管部门制定，报国务院批准后施行。
+            4.海上旅客运输的旅客人身伤亡赔偿责任限制，按照175000计算单位乘以船舶证书规定的载客定额计算赔偿责任限额。
+            5.不以船舶进行救助作业或者在被救船舶上进行救助作业的海难救助方，其赔偿责任限额按照1500总吨的船舶计算。
+        </div>
+    </div>
+
+    <script>
+        // 人身伤亡赔偿限额计算
+        function calcPersonal(gt) {
+            let base = 500000;
+            let detail = [];
+            let total = 0;
+
+            if (gt <= 500) {
+                total = base;
+                detail.push(`300-500总吨基础限额：${base.toLocaleString()} SDR`);
+                return { total, detail };
+            }
+
+            detail.push(`500总吨及以下基础限额：${base.toLocaleString()} SDR`);
+            total = base;
+
+            // 501-2000总吨段
+            let part1End = Math.min(gt, 2000);
+            let part1Tons = part1End - 500;
+            let part1Amt = part1Tons * 1000;
+            if (part1Tons > 0) {
+                detail.push(`501-${part1End}总吨部分：${part1Tons.toLocaleString()}吨 × 1000 SDR/吨 = ${part1Amt.toLocaleString()} SDR`);
+                total += part1Amt;
+            }
+
+            // 2001-30000总吨段
+            let part2End = Math.min(gt, 30000);
+            let part2Tons = part2End - 2000;
+            let part2Amt = part2Tons * 800;
+            if (part2Tons > 0) {
+                detail.push(`2001-${part2End}总吨部分：${part2Tons.toLocaleString()}吨 × 800 SDR/吨 = ${part2Amt.toLocaleString()} SDR`);
+                total += part2Amt;
+            }
+
+            // 30001-70000总吨段
+            let part3End = Math.min(gt, 70000);
+            let part3Tons = part3End - 30000;
+            let part3Amt = part3Tons * 600;
+            if (part3Tons > 0) {
+                detail.push(`30001-${part3End}总吨部分：${part3Tons.toLocaleString()}吨 × 600 SDR/吨 = ${part3Amt.toLocaleString()} SDR`);
+                total += part3Amt;
+            }
+
+            // 70000总吨以上段
+            let part4Tons = Math.max(gt - 70000, 0);
+            let part4Amt = part4Tons * 400;
+            if (part4Tons > 0) {
+                detail.push(`70001-${gt}总吨部分：${part4Tons.toLocaleString()}吨 × 400 SDR/吨 = ${part4Amt.toLocaleString()} SDR`);
+                total += part4Amt;
+            }
+
+            return { total, detail };
+        }
+
+        // 非人身伤亡赔偿限额计算
+        function calcNonPersonal(gt) {
+            let base = 250000;
+            let detail = [];
+            let total = 0;
+
+            if (gt <= 500) {
+                total = base;
+                detail.push(`300-500总吨基础限额：${base.toLocaleString()} SDR`);
+                return { total, detail };
+            }
+
+            detail.push(`500总吨及以下基础限额：${base.toLocaleString()} SDR`);
+            total = base;
+
+            // 501-2000总吨段
+            let part1End = Math.min(gt, 2000);
+            let part1Tons = part1End - 500;
+            let part1Amt = part1Tons * 500;
+            if (part1Tons > 0) {
+                detail.push(`501-${part1End}总吨部分：${part1Tons.toLocaleString()}吨 × 500 SDR/吨 = ${part1Amt.toLocaleString()} SDR`);
+                total += part1Amt;
+            }
+
+            // 2001-30000总吨段
+            let part2End = Math.min(gt, 30000);
+            let part2Tons = part2End - 2000;
+            let part2Amt = part2Tons * 400;
+            if (part2Tons > 0) {
+                detail.push(`2001-${part2End}总吨部分：${part2Tons.toLocaleString()}吨 × 400 SDR/吨 = ${part2Amt.toLocaleString()} SDR`);
+                total += part2Amt;
+            }
+
+            // 30001-70000总吨段
+            let part3End = Math.min(gt, 70000);
+            let part3Tons = part3End - 30000;
+            let part3Amt = part3Tons * 300;
+            if (part3Tons > 0) {
+                detail.push(`30001-${part3End}总吨部分：${part3Tons.toLocaleString()}吨 × 300 SDR/吨 = ${part3Amt.toLocaleString()} SDR`);
+                total += part3Amt;
+            }
+
+            // 70000总吨以上段
+            let part4Tons = Math.max(gt - 70000, 0);
+            let part4Amt = part4Tons * 200;
+            if (part4Tons > 0) {
+                detail.push(`70001-${gt}总吨部分：${part4Tons.toLocaleString()}吨 × 200 SDR/吨 = ${part4Amt.toLocaleString()} SDR`);
+                total += part4Amt;
+            }
+
+            return { total, detail };
+        }
+
+        // 主计算函数
+        function calculateLimit() {
+            const gtInput = document.getElementById('gt');
+            const gt = parseFloat(gtInput.value);
+
+            // 校验输入
+            if (isNaN(gt) || gt < 300) {
+                alert('请输入300及以上的有效船舶总吨位');
+                return;
+            }
+
+            // 计算结果
+            const personalRes = calcPersonal(gt);
+            const nonPersonalRes = calcNonPersonal(gt);
+
+            // 渲染人身伤亡结果
+            document.getElementById('personalResult').style.display = 'block';
+            document.getElementById('personalValue').innerText = `${personalRes.total.toLocaleString()} SDR`;
+            document.getElementById('personalDetail').innerText = personalRes.detail.join('\n');
+
+            // 渲染非人身伤亡结果
+            document.getElementById('nonPersonalResult').style.display = 'block';
+            document.getElementById('nonPersonalValue').innerText = `${nonPersonalRes.total.toLocaleString()} SDR`;
+            document.getElementById('nonPersonalDetail').innerText = nonPersonalRes.detail.join('\n');
+        }
+
+        // 回车触发计算
+        document.getElementById('gt').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                calculateLimit();
+            }
+        });
+    </script>
+</body>
+</html>
